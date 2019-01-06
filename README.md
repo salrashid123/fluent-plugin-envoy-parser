@@ -46,13 +46,24 @@ First lets setup `envoy` on a target sytem
 In the same folder as this repo, run:
 
 ```
-   docker run -v `pwd`example/:/apps -p 10000:10000 envoyproxy/envoy -l info -c /apps/envoy_config_http.yaml
+   docker run -v `pwd`example/:/apps -p 10000:10000 envoyproxy/envoy -l info -v /var/log/envoy.log:/var/log/envoy.log -c /apps/envoy_config_http.yaml
 ```
 
 At this point, you'll have envoy running on port `10000`.  The sample envoy config does nothing other an return the `/robots.txt` file from a particualr site.
 
 
-If you would rather run envoy directly w/o docker on a target system, you can extract the binary from the dokcer image to your local system (eg. via a volume map). You can find the envoy binary inside the container at `/usr/local/bin/envoy`.
+If you would rather run envoy directly w/o docker on a target system, you can extract the binary from the dokcer image to your local system (eg. via a volume map). You can find the envoy binary inside the container at `/usr/local/bin/envoy`.  For example, on linux:
+
+```
+docker run  envoyproxy/envoy
+
+then
+$ docker ps
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS               NAMES
+5642eabfb477        envoyproxy/envoy    "/docker-entrypoint.…"   26 seconds ago      Up 25 seconds       10000/tcp           epic_shtern
+
+$ docker cp 5642eabfb477:/usr/local/bin/envoy .
+```
 
 
 ## Install

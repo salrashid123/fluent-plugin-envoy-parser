@@ -52,7 +52,7 @@ In the same folder as this repo, run:
 At this point, you'll have envoy running on port `10000`.  The sample envoy config does nothing other an return the `/robots.txt` file from a particualr site.
 
 
-If you would rather run envoy as a binary on a target system you can extract the binary from the dokcer image to your local system (eg. via a volume map). You can find the envoy binary inside the container at `/usr/local/bin/envoy`.
+If you would rather run envoy directly w/o docker on a target system, you can extract the binary from the dokcer image to your local system (eg. via a volume map). You can find the envoy binary inside the container at `/usr/local/bin/envoy`.
 
 
 ## Install
@@ -67,12 +67,12 @@ If you want to use this pluign-in on out of the box `fluentd`
 
 ### td-agent
 
-First install `fluentd`:
+First install `fluentd`  (the command below is for `xenial`)
 ```
 curl -L https://toolbelt.treasuredata.com/sh/install-ubuntu-xenial-td-agent3.sh | sh
 ```
 
-then install this local (or remote) gem file:
+- install this local (or remote) gem file:
 
 ```
 sudo /usr/sbin/td-agent-gem install fluent-plugin-envoy-parser
@@ -82,12 +82,7 @@ or
 sudo /usr/sbin/td-agent-gem install --local fluent-plugin-envoy-parser-0.0.6.gem
 ```
 
-or
-
-```
-```
-
-Then copy a sample config provided in this repo and restart
+-  copy a sample config provided in this repo and restart
 
 ```
 cp fluentd_envoy_td.conf /etc/td-agent/td-agent.conf
@@ -95,8 +90,7 @@ cp fluentd_envoy_td.conf /etc/td-agent/td-agent.conf
 service td-agent restart
 ```
 
-
-Tail the log file
+- tail the log file
 
 ```
 tail -f /var/log/td-agent/td-agent.log
@@ -104,7 +98,7 @@ tail -f /var/log/td-agent/td-agent.log
 
 #### HTTP
 
-If you want to use this agent ti track `envoy.http_connection_manager`, then edit `/etc/td-agent/td-agent.conf` and set the `log_format` value as `envoy_http`:
+If you want to use this agent to track `envoy.http_connection_manager`, then edit `/etc/td-agent/td-agent.conf` and set the `log_format` value as `envoy_http`:
 
 ```
   <parse>
@@ -133,13 +127,16 @@ the on the `td-agent.log` file you should see:
 
 To use `fluentd` to parse `TCP` traffic, just set `/etc/td-agent/td-agent.conf` `log_format` value as `envoy_tcp`:
 
-and restart fluentd and envoy as well to use `envoy_config_http.yaml`.
+and restart fluentd and envoy as well to use `envoy_config_tcp.yaml` for the envoy configuration.
 
 the on the `td-agent.log` file you should see:
 
 ```
 2019-01-06 05:00:45.000000000 +0000 envoy-access: {"bytes_received":85,"bytes_sent":1408,"duration":"0.056s","upstream_host":"151.101.184.81:443"}
 ```
+
+> note, the output format only shows raw TCP stats as intended.
+
 
 ### google-fluentd
 
@@ -155,7 +152,7 @@ First install the agent on a VM:
     bash install-logging-agent.sh --structured
 ```
 
-Now install the `.gem`:
+- install the `.gem`:
 
 ```
 /opt/google-fluentd/embedded/bin/gem install fluent-plugin-envoy-parser
@@ -165,7 +162,7 @@ or
 /opt/google-fluentd/embedded/bin/gem install --local fluent-plugin-envoy-parser-0.0.6.gem
 ```
 
-Copy the fluentd configuration needed for default http over and restart
+- Copy the fluentd configuration needed for default http over and restart
 
 ```
 cp fluentd_envoy_google.conf /etc/google-fluentd/config.d/envoy.conf
@@ -176,7 +173,7 @@ service google-fluentd restart
 
 #### HTTP
 
-If you started google-fluentd with `log_format` value as `envoy_http` mode and have envoy running in ths same, if yous end traffic in:
+If you started google-fluentd with `log_format` value as `envoy_http` mode and have envoy running in ths same, if you end traffic in:
  
 ```
 curl -H "Host: www.bbc.com" http://localhost:10000/robots.txt
@@ -190,7 +187,16 @@ By structured, notice the `httpRequst` prtocol buffer is populated in the logs"
 
 #### TCP
 
-For generic tcp traffic, reset the `log_format` and restart envoy with the config for tcp:
+For generic tcp traffic, reset the `log_format` to `envoy_tcp` 
+
+```
+  <parse>
+    @type envoy
+    log_format envoy_tcp
+  </parse>
+```
+
+and restart envoy with the config `envoy_config_tcp.yaml`
 
 Once you send any traffic in (i'm using http here)
 ```

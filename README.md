@@ -39,30 +39,10 @@ This will give you the `fluent-plugin-envoy-parser-A.B.C.gem` file to deploy
 
 ## Start Envoy
 
-First lets setup `envoy` on a target sytem
-
-- You can either run envoy in docker or extract the binary:
-
-In the same folder as this repo, run:
+First lets setup `envoy` on a target system
 
 ```
-   docker run -v `pwd`example/:/apps -p 10000:10000 envoyproxy/envoy -l info -v /var/log/envoy.log:/var/log/envoy.log -c /apps/envoy_config_http.yaml
-```
-
-At this point, you'll have envoy running on port `10000`.  The sample envoy config does nothing other an return the `/robots.txt` file from a particualr site.
-
-
-If you would rather run envoy directly w/o docker on a target system, you can extract the binary from the dokcer image to your local system (eg. via a volume map). You can find the envoy binary inside the container at `/usr/local/bin/envoy`.  For example, on linux:
-
-```
-docker run  envoyproxy/envoy
-
-then
-$ docker ps
-CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS               NAMES
-5642eabfb477        envoyproxy/envoy    "/docker-entrypoint.…"   26 seconds ago      Up 25 seconds       10000/tcp           epic_shtern
-
-$ docker cp 5642eabfb477:/usr/local/bin/envoy .
+docker cp `docker create envoyproxy/envoy-dev:latest`:/usr/local/bin/envoy /tmp/
 ```
 
 
@@ -124,14 +104,14 @@ If you then configure envoy to run the `envoy_config_http.yaml`, send some traff
 
 
 ```
-curl -H "Host: www.bbc.com" http://localhost:10000/robots.txt
+curl -H "Host: www.bbc.com" http://localhost:10000/get
 ```
 
 
 the on the `td-agent.log` file you should see:
 
 ```
-2019-01-06 04:59:12.000000000 +0000 envoy-access: {"protocol":"HTTP/1.1","response_flags":"-","x_envoy_upstream_service_time":"11","x_forwarded_for":null,"authority":"www.bbc.com","upstream_host":"151.101.184.81:443","httpRequest":{"requestMethod":"GET","requestUrl":"/robots.txt","responseSize":945,"status":200,"userAgent":"curl/7.52.1","requestSize":0,"latency":"0.011s"}}
+2019-01-06 04:59:12.000000000 +0000 envoy-access: {"protocol":"HTTP/1.1","response_flags":"-","x_envoy_upstream_service_time":"11","x_forwarded_for":null,"authority":"httpbin.org","upstream_host":"151.101.184.81:443","httpRequest":{"requestMethod":"GET","requestUrl":"/get","responseSize":945,"status":200,"userAgent":"curl/7.52.1","requestSize":0,"latency":"0.011s"}}
 ```
 
 #### TCP
@@ -187,7 +167,7 @@ service google-fluentd restart
 If you started google-fluentd with `log_format` value as `envoy_http` mode and have envoy running in ths same, if you end traffic in:
  
 ```
-curl -H "Host: www.bbc.com" http://localhost:10000/robots.txt
+curl -H "Host: httpbin.org" http://localhost:10000/get
 ```
 
 You should see **structured** logs in GCP:  
